@@ -95,14 +95,13 @@ def main():
     if not args.headless:
         cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
 
-    prev_time = time.time()
+    prev_time = None
     fps = 60.0
     frame_count = 0
 
     print("\n[INFO] Starting high-FPS hand tracking loop...")
     try:
         while True:
-            t0 = time.perf_counter()
             ret, frame = camera.read()
             if not ret or frame is None:
                 time.sleep(0.001)
@@ -152,10 +151,13 @@ def main():
             hand_counts_str = " | ".join(hand_finger_summaries)
 
             # High-precision FPS calculation
-            t1 = time.perf_counter()
-            dt = t1 - t0
-            curr_fps = (1.0 / dt) if dt > 0 else 60.0
-            fps = 0.90 * fps + 0.10 * curr_fps
+            curr_time = time.perf_counter()
+            if prev_time is not None:
+                dt = curr_time - prev_time
+                if dt > 0:
+                    curr_fps = 1.0 / dt
+                    fps = 0.90 * fps + 0.10 * curr_fps
+            prev_time = curr_time
 
             # Render top HUD banner with Finger Count and Emergency Alert Banner
             draw_hud(frame, len(hands), active_gestures, fps, total_fingers=total_fingers, help_active=help_active, hand_counts_summary=hand_counts_str)
